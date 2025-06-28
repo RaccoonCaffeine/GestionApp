@@ -1,0 +1,26 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="goBack()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </ion-button>    
+    </ion-buttons>
+    <ion-title>Gestión de Usuarios</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-spinner *ngIf="loading"></ion-spinner>
+  <ion-list *ngIf="!loading">
+    <ion-item *ngFor="let usuario of usuarios">
+      <ion-label>
+        <h2>{{ usuario.displayName || usuario.email }}</h2>
+        <p>Email: {{ usuario.email }}</p>
+        <p>Rol actual: {{ usuario.role }}</p>
+      </ion-label>
+      <ion-select [value]="usuario.role" (ionChange)="cambiarRol(usuario, $event.detail.value)">
+        <ion-select-option *ngFor="let rol of roles" [value]="rol.value">{{ rol.label }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+  </ion-list>
+</ion-content>

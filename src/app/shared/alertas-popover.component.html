@@ -1,0 +1,20 @@
+
+  <ion-list *ngIf="!loading && paginadas().length; else noAlertas">
+    <ion-item *ngFor="let alerta of paginadas()" class="alerta-item">
+      <ion-icon name="alert-circle-outline" color="warning" slot="start" style="font-size: 24px;"></ion-icon>
+      <ion-label>
+        <div class="alerta-desc">{{ alerta.description }}</div>
+        <div class="alerta-stock">Stock bajo: <b>{{ alerta.stock }}</b> <span class="minimo">(mínimo: {{ alerta.minStock }})</span></div>
+      </ion-label>
+      <ion-button fill="outline" color="success" size="small" (click)="marcarLeido.emit(alerta.id)">Marcar como leído</ion-button>
+    </ion-item>
+  </ion-list>
+  <ng-template #noAlertas>
+    <p class="no-alertas">No hay alertas de stock bajo.</p>
+  </ng-template>
+  <div class="paginacion" *ngIf="totalPages() > 1">
+    <ion-button fill="clear" [disabled]="page === 1" (click)="cargarPagina.emit(page-1)" size="small">&lt;</ion-button>
+    <span>Página {{ page }} de {{ totalPages() }}</span>
+    <ion-button fill="clear" [disabled]="page === totalPages()" (click)="cargarPagina.emit(page+1)" size="small">&gt;</ion-button>
+  </div>
+

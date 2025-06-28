@@ -1,0 +1,66 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="goBack()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Movimientos de Inventario</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form [formGroup]="form" (ngSubmit)="save()">
+    <ion-item>
+      <ion-label position="floating">Ítem</ion-label>
+      <ion-select formControlName="itemId">
+        <ion-select-option *ngFor="let item of items" [value]="item.id">{{ item.description }}</ion-select-option>
+      </ion-select>
+    </ion-item>
+    <ion-item>
+      <ion-label position="floating">Tipo</ion-label>
+      <ion-select formControlName="type">
+        <ion-select-option value="entrada">Entrada</ion-select-option>
+        <ion-select-option value="salida">Salida</ion-select-option>
+        <ion-select-option value="transferencia">Transferencia</ion-select-option>
+        <ion-select-option value="uso">Uso</ion-select-option>
+        <ion-select-option value="devolucion">Devolución</ion-select-option>
+      </ion-select>
+    </ion-item>
+    <ion-item>
+      <ion-label position="floating">Cantidad</ion-label>
+      <ion-input type="number" formControlName="quantity"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-label position="floating">Notas</ion-label>
+      <ion-input formControlName="notes"></ion-input>
+    </ion-item>
+    <ion-button expand="block" type="submit" [disabled]="loading || form.invalid">
+      <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
+      <span *ngIf="!loading">Registrar</span>
+    </ion-button>
+  </form>
+
+  <form [formGroup]="filterForm" (ngSubmit)="onFilterChange()" class="ion-margin-bottom">
+    <ion-item>
+      <ion-label>Desde: </ion-label>
+      <ion-input type="date" formControlName="start" (ionChange)="onFilterChange()"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-label>Hasta: </ion-label>
+      <ion-input type="date" formControlName="end" (ionChange)="onFilterChange()"></ion-input>
+    </ion-item>
+  </form>
+
+  <ion-list>
+    <ion-item *ngFor="let mov of movimientos">
+      <ion-label>
+        <h2>{{ mov.type | titlecase }} - {{ mov.quantity }}</h2>
+        <p>
+          Ítem: {{ getItemName(mov.itemId) }}
+          | <span [style.color]="!mov.notes ? '#bbb' : ''">{{ mov.notes || 'Nota: sin nota' }}</span>
+        </p>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>

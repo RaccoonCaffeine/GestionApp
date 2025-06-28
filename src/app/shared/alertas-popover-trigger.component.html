@@ -1,0 +1,8 @@
+<div class="alertas-trigger-btn-wrapper">
+  <button ion-button fill="clear" (click)="goToAlertas()" class="alertas-trigger-btn">
+    <span class="icon-wrapper">
+      <ion-icon name="notifications-outline" style="font-size: 28px;"></ion-icon>
+      <span *ngIf="unread > 0" class="alert-badge">{{ unread }}</span>
+    </span>
+  </button>
+</div>

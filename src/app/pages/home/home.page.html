@@ -1,0 +1,25 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-title>Inventario Maestranza</ion-title>
+    <ion-buttons slot="end">
+      <app-alertas-popover-trigger></app-alertas-popover-trigger>
+      <ion-button (click)="logout()">
+        <ion-icon name="log-out-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <h2>Bienvenido</h2>
+  <div *ngIf="auth.user$ | async as user">
+    <p>Usuario: {{ user.email }}<br>Rol: {{ user.role }}</p>
+  </div>
+  <ion-list *ngIf="auth.user$ | async as user">
+    <ion-item *ngFor="let opt of filteredMenuOptions(user)" [routerLink]="opt.route">
+      <ion-icon [name]="opt.icon" slot="start"></ion-icon>
+      <ion-label>{{ opt.label }}</ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>
+

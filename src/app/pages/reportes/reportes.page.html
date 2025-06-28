@@ -1,0 +1,35 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="goBack()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Reportes</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-spinner *ngIf="loading"></ion-spinner>
+  <h2>Inventario</h2>
+  <!-- Filtro múltiple por items -->
+  <ion-item>
+    <ion-label>Filtrar ítems</ion-label>
+    <ion-select [(ngModel)]="selectedItems" multiple="true" okText="OK" cancelText="Cancelar" interface="popover">
+      <ion-select-option *ngFor="let item of inventario" [value]="item.id">{{ item.description }}</ion-select-option>
+    </ion-select>
+  </ion-item>
+  <ion-list>
+    <ion-item *ngFor="let item of inventario | filterByIds:selectedItems">
+      <ion-label>{{ item.description }} (Stock: {{ item.stock }})</ion-label>
+    </ion-item>
+  </ion-list>
+  <h2>Movimientos</h2>
+  <ion-list>
+    <ion-item *ngFor="let mov of movimientos | filterMovsByItems:selectedItems">
+      <ion-label>
+        <strong>{{ mov.itemName || mov.itemId }}</strong> &mdash; {{ mov.type }} - {{ mov.quantity }} - {{ mov.date | date:'short' }}
+      </ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>

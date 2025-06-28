@@ -1,0 +1,37 @@
+.alertas-trigger-btn-wrapper {
+  display: flex;
+  align-items: center;
+  height: 100%;
+}
+.alertas-trigger-btn {
+  background: transparent;
+  box-shadow: none;
+  position: relative;
+  padding: 0 8px;
+  min-width: 44px;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.icon-wrapper {
+  position: relative;
+  display: inline-block;
+  width: 28px;
+  height: 28px;
+}
+.alert-badge {
+  position: absolute;
+  top: -6px;
+  right: -6px;
+  background: #e53935;
+  color: #fff;
+  border-radius: 50%;
+  padding: 2px 7px;
+  font-size: 13px;
+  font-weight: bold;
+  z-index: 10;
+  border: 2px solid #fff;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.15);
+  line-height: 1;
+}

@@ -1,0 +1,58 @@
+
+:host {
+  display: block;
+}
+
+.inventario-table-wrapper {
+  overflow-x: auto;
+  margin-top: 16px;
+}
+
+.inventario-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--ion-background-color, #fff);
+}
+
+.inventario-table thead tr {
+  background: var(--ion-color-primary, #2f72de);
+  color: var(--ion-color-primary-contrast, #fff);
+}
+
+.inventario-table th, .inventario-table td {
+  padding: 10px 8px;
+}
+
+.inventario-table tbody tr {
+  border-bottom: 1px solid var(--ion-color-step-150, #e0e0e0);
+}
+
+.inventario-table td {
+  background: var(--ion-background-color, #fff);
+}
+
+.inventario-estado {
+  border-radius: 16px;
+  padding: 2px 12px;
+  font-weight: bold;
+  font-size: 13px;
+  display: inline-block;
+  min-width: 60px;
+}
+.estado-alto {
+  background: var(--ion-color-success, #10dc60);
+  color: var(--ion-color-success-contrast, #fff);
+}
+.estado-medio {
+  background: var(--ion-color-warning, #ffd54f);
+  color: var(--ion-color-warning-contrast, #333);
+}
+.estado-critico {
+  background: var(--ion-color-danger, #e57373);
+  color: var(--ion-color-danger-contrast, #fff);
+}
+
+.inventario-table tr[expanded] td {
+  background: var(--ion-color-step-50, #fafbfc);
+  border-left: 3px solid var(--ion-color-primary, #3880ff);
+}
