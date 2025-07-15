@@ -1,3 +1,4 @@
+  <!-- Gestión de lotes solo desde movimientos. Formulario eliminado. -->
 <ion-header>
   <ion-toolbar color="primary">
     <ion-buttons slot="start">
@@ -11,8 +12,143 @@
 
 
 <ion-content class="ion-padding">
-  <!-- Formulario de agregar/editar solo visible si no es trabajador -->
-  <form *ngIf="userRole === 'admin' || userRole === 'gestor'" [formGroup]="form" (ngSubmit)="save()">
+
+
+  <!-- Separador visual -->
+  <div class="inventario-separador"></div>
+
+  <!-- Buscador -->
+  <ion-item>
+    <ion-label position="floating">Buscar por nombre, categoría o etiqueta</ion-label>
+    <ion-input [(ngModel)]="filterText" name="filterText"></ion-input>
+  </ion-item>
+
+  <!-- Tabla visual tipo dashboard -->
+  <div class="inventario-table-wrapper">
+    <table class="inventario-table">
+      <thead>
+        <tr>
+          <th>Código</th>
+          <!-- <th>Componente/Pieza</th> -->
+          <th>Descripción</th>
+          <th>Stock Actual</th>
+          <th>Stock Mínimo</th>
+          <th>Ubicación</th>
+          <th>Estado</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let item of filteredItems">
+          <td class="inventario-serial">{{ item.serialNumber }}</td>
+          <td class="inventario-desc">{{ item.description }}</td>
+          <td class="inventario-stock">
+            <span class="inventario-stock-group">
+              <span>{{ getItemStock(item) }}</span>
+              <ion-button fill="clear" color="medium" size="small" (click)="verLotes(item)" title="Ver lotes de este ítem" class="inventario-lotes-btn">
+                <ion-icon name="list-outline"></ion-icon>
+              </ion-button>
+            </span>
+          </td>
+          <td class="inventario-minstock">{{ item.minStock }}</td>
+          <td class="inventario-location">{{ item.location }}</td>
+          <td>
+            <span
+              class="inventario-estado"
+              [ngClass]="{
+                'estado-alto': (getItemStock(item) / item.minStock) >= 2,
+                'estado-medio': (getItemStock(item) / item.minStock) > 0.8 && (getItemStock(item) / item.minStock) < 2,
+                'estado-critico': (getItemStock(item) / item.minStock) <= 0.8
+              }"
+            >
+              {{
+                (getItemStock(item) / item.minStock) <= 0.8 ? 'CRÍTICO' :
+                ((getItemStock(item) / item.minStock) >= 2 ? 'ALTO' : 'MEDIO')
+              }}
+              <span style="font-size:11px; margin-left:6px;">
+                ({{ ((getItemStock(item) / item.minStock) * 100) | number:'1.0-0' }}%)
+              </span>
+            </span>
+          </td>
+          <td style="padding:8px 6px; text-align:center;">
+            <ng-container *ngIf="userRole === 'admin' || userRole === 'gestor'; else soloVer">
+              <ion-button fill="clear" color="primary" size="small" (click)="edit(item)" title="Editar ítem">
+                <ion-icon name="create-outline"></ion-icon>
+              </ion-button>
+              <ion-button fill="clear" color="danger" size="small" (click)="delete(item)" title="Eliminar ítem">
+                <ion-icon name="trash-outline"></ion-icon>
+              </ion-button>
+            </ng-container>
+            <ng-template #soloVer></ng-template>
+            <ion-button fill="clear" color="medium" size="small" (click)="toggleMovimientos(item)" title="Ver movimientos">
+              <ion-icon [name]="expandedItemId === item.id ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
+            </ion-button>
+          </td>
+        </tr>
+        <ng-container *ngFor="let item of filteredItems">
+          <tr *ngIf="expandedItemId === item.id" expanded>
+            <td colspan="7" style="padding:0; background:#f8fafc;">
+              <div style="display:flex; justify-content:center;">
+                <ion-card style="width:100%; max-width:600px; margin:18px 0; box-shadow:0 2px 8px #0001;">
+                  <ion-card-header>
+                    <ion-card-title style="font-size:18px; color:var(--ion-color-primary, #374151);">Detalles del ítem</ion-card-title>
+                  </ion-card-header>
+                  <ion-card-content>
+                    <div style="margin-bottom:10px;">
+                      <strong>Categoría:</strong> <span style="color:#2563eb; font-weight:500;">{{ item.category || '-' }}</span><br>
+                      <strong>Etiquetas:</strong>
+                      <ng-container *ngIf="item.tags?.length; else sinTags">
+                        <span *ngFor="let tag of item.tags" class="inventario-tag" style="background:#e0e7ff; color:#3730a3; border-radius:6px; padding:2px 8px; margin-right:4px; font-size:13px;">{{ tag }}</span>
+                      </ng-container>
+                      <ng-template #sinTags><span style="color:#888;">-</span></ng-template>
+                    </div>
+                    <div style="margin-bottom:10px;">
+                      <strong>Descripción:</strong> {{ item.description }}<br>
+                      <strong>N° Serie:</strong> {{ item.serialNumber }}<br>
+                      <strong>Ubicación:</strong> {{ item.location }}<br>
+                      <strong>Stock Mínimo:</strong> {{ item.minStock }}<br>
+                      <strong>Stock Actual:</strong> {{ getItemStock(item) }}
+                    </div>
+                    <h3 style="margin:0 0 8px 0; font-size:16px; color:var(--ion-color-primary, #374151);">Historial de movimientos</h3>
+                    <form [formGroup]="filterMovsForm" (ngSubmit)="$event.preventDefault()" style="display:flex; gap:16px; align-items:center; margin-bottom:8px;">
+                      <ion-item style="flex:1;">
+                        <ion-label>Desde: </ion-label>
+                        <ion-input type="date" formControlName="start" (ionChange)="onMovsFilterChange(item)"></ion-input>
+                      </ion-item>
+                      <ion-item style="flex:1;">
+                        <ion-label>Hasta: </ion-label>
+                        <ion-input type="date" formControlName="end" (ionChange)="onMovsFilterChange(item)"></ion-input>
+                      </ion-item>
+                    </form>
+                    <ng-container *ngIf="movimientosPorItem[item.id] && movimientosPorItem[item.id].length; else noMovs">
+                      <ul style="margin:0; padding-left:18px;">
+                        <li *ngFor="let mov of movimientosPorItem[item.id]">
+                          <strong>{{ mov.type | titlecase }}</strong> - {{ mov.quantity }}
+                          <span style="color:var(--ion-color-medium, #888); font-size:12px;">({{ mov.date | date:'dd/MM/yyyy HH:mm' }})</span>
+                        </li>
+                      </ul>
+                    </ng-container>
+                    <ng-template #noMovs>
+                      <p style="color:var(--ion-color-medium, #888); margin:0;">Sin movimientos registrados.</p>
+                    </ng-template>
+                  </ion-card-content>
+                </ion-card>
+              </div>
+            </td>
+          </tr>
+        </ng-container>
+  <!-- Eliminados filtros individuales, ahora el buscador principal filtra por nombre, categoría o etiqueta -->
+      </tbody>
+    </table>
+  </div>
+  <!-- Botón para agregar ítem y formulario SOLO debajo de la tabla -->
+  <div style="margin-top: 16px; text-align: right;">
+    <ion-button *ngIf="(userRole === 'admin' || userRole === 'gestor') && !showAddForm" color="primary" (click)="showAddForm = true; form.reset(); editingId = null;">
+      <ion-icon name="add-circle-outline"></ion-icon>
+      Agregar ítem
+    </ion-button>
+  </div>
+  <form *ngIf="(userRole === 'admin' || userRole === 'gestor') && showAddForm" [formGroup]="form" (ngSubmit)="save()" style="margin: 16px 0 24px 0; background:#f3f4f6; padding:16px; border-radius:8px;">
     <ion-item>
       <ion-label position="floating">Descripción</ion-label>
       <ion-input formControlName="description"></ion-input>
@@ -25,10 +161,15 @@
       <ion-label position="floating">Ubicación</ion-label>
       <ion-input formControlName="location"></ion-input>
     </ion-item>
-    <ion-item>
-      <ion-label position="floating">Stock</ion-label>
-      <ion-input type="number" formControlName="stock"></ion-input>
-    </ion-item>
+   <ion-item>
+     <ion-label position="floating">Categoría</ion-label>
+     <ion-input formControlName="category"></ion-input>
+   </ion-item>
+   <ion-item>
+     <ion-label position="floating">Etiquetas (separadas por coma)</ion-label>
+     <ion-input formControlName="tags"></ion-input>
+   </ion-item>
+    <!-- El stock ahora se calcula por lotes, no se ingresa aquí -->
     <ion-item>
       <ion-label position="floating">Stock Mínimo</ion-label>
       <ion-input type="number" formControlName="minStock"></ion-input>
@@ -37,105 +178,16 @@
       <ion-spinner *ngIf="loading" name="crescent"></ion-spinner>
       <span *ngIf="!loading">{{ editingId ? 'Actualizar' : 'Agregar' }}</span>
     </ion-button>
-    <ion-button expand="block" fill="clear" color="medium" type="button" (click)="cancel()" *ngIf="editingId">Cancelar</ion-button>
+    <ion-button expand="block" fill="clear" color="medium" type="button" (click)="cancel()">Cancelar</ion-button>
   </form>
-
-  <!-- Separador visual -->
-  <div style="margin: 32px 0 24px 0; border-bottom: 2px solid #e0e0e0;"></div>
-
-  <!-- Buscador -->
-  <ion-item>
-    <ion-label position="floating">Buscar por nombre</ion-label>
-    <ion-input [(ngModel)]="filterText" name="filterText"></ion-input>
-  </ion-item>
-
-  <!-- Tabla visual tipo dashboard -->
-  <div class="inventario-table-wrapper" style="overflow-x:auto; margin-top: 16px;">
-    <table class="inventario-table" style="width:100%; border-collapse:collapse; background:#fff;">
-      <thead>
-        <tr style="background:#374151; color:#fff;">
-          <th style="padding:10px 8px;">Código</th>
-          <!-- <th style="padding:10px 8px;">Componente/Pieza</th> -->
-          <th style="padding:10px 8px;">Descripción</th>
-          <th style="padding:10px 8px;">Stock Actual</th>
-          <th style="padding:10px 8px;">Stock Mínimo</th>
-          <th style="padding:10px 8px;">Ubicación</th>
-          <th style="padding:10px 8px;">Estado</th>
-          <th style="padding:10px 8px;">Acciones</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let item of filteredItems" style="border-bottom:1px solid #e0e0e0;">
-          <td style="padding:8px 6px; font-weight:600;">{{ item.serialNumber }}</td>
-          <!-- <td style="padding:8px 6px;">{{ item.component || '-' }}</td> -->
-          <td style="padding:8px 6px;">{{ item.description }}</td>
-          <td style="padding:8px 6px; text-align:center;">{{ item.stock }}</td>
-          <td style="padding:8px 6px; text-align:center;">{{ item.minStock }}</td>
-          <td style="padding:8px 6px;">{{ item.location }}</td>
-          <td style="padding:8px 6px; text-align:center;">
-            <span
-              class="inventario-estado"
-              [ngClass]="{
-                'estado-alto': (item.stock / item.minStock) >= 2,
-                'estado-medio': (item.stock / item.minStock) > 0.8 && (item.stock / item.minStock) < 2,
-                'estado-critico': (item.stock / item.minStock) <= 0.8
-              }"
-            >
-              {{
-                (item.stock / item.minStock) <= 0.8 ? 'CRÍTICO' :
-                ((item.stock / item.minStock) >= 2 ? 'ALTO' : 'MEDIO')
-              }}
-              <span style="font-size:11px; margin-left:6px;">
-                ({{ ((item.stock / item.minStock) * 100) | number:'1.0-0' }}%)
-              </span>
-            </span>
-          </td>
-          <td style="padding:8px 6px; text-align:center;">
-            <ng-container *ngIf="userRole === 'admin' || userRole === 'gestor'; else soloVer">
-              <ion-button fill="clear" color="primary" size="small" (click)="edit(item)">
-                <ion-icon name="create-outline"></ion-icon>
-              </ion-button>
-              <ion-button fill="clear" color="danger" size="small" (click)="delete(item)">
-                <ion-icon name="trash-outline"></ion-icon>
-              </ion-button>
-            </ng-container>
-            <ng-template #soloVer></ng-template>
-            <ion-button fill="clear" color="medium" size="small" (click)="toggleMovimientos(item)">
-              <ion-icon [name]="expandedItemId === item.id ? 'chevron-up-outline' : 'chevron-down-outline'"></ion-icon>
-            </ion-button>
-          </td>
-        </tr>
-        <ng-container *ngFor="let item of filteredItems">
-          <tr *ngIf="expandedItemId === item.id" expanded>
-            <td colspan="7">
-              <div>
-                <h3 style="margin:0 0 8px 0; font-size:16px; color:var(--ion-color-primary, #374151);">Historial de movimientos</h3>
-                <form [formGroup]="filterMovsForm" (ngSubmit)="$event.preventDefault()" style="display:flex; gap:16px; align-items:center; margin-bottom:8px;">
-                  <ion-item style="flex:1;">
-                    <ion-label>Desde: </ion-label>
-                    <ion-input type="date" formControlName="start" (ionChange)="onMovsFilterChange(item)"></ion-input>
-                  </ion-item>
-                  <ion-item style="flex:1;">
-                    <ion-label>Hasta: </ion-label>
-                    <ion-input type="date" formControlName="end" (ionChange)="onMovsFilterChange(item)"></ion-input>
-                  </ion-item>
-                </form>
-                <ng-container *ngIf="movimientosPorItem[item.id] && movimientosPorItem[item.id].length; else noMovs">
-                  <ul style="margin:0; padding-left:18px;">
-                    <li *ngFor="let mov of movimientosPorItem[item.id]">
-                      <strong>{{ mov.type | titlecase }}</strong> - {{ mov.quantity }}
-                      <span style="color:var(--ion-color-medium, #888); font-size:12px;">({{ mov.date | date:'dd/MM/yyyy HH:mm' }})</span>
-                    </li>
-                  </ul>
-                </ng-container>
-                <ng-template #noMovs>
-                  <p style="color:var(--ion-color-medium, #888); margin:0;">Sin movimientos registrados.</p>
-                </ng-template>
-              </div>
-            </td>
-          </tr>
-        </ng-container>
-      </tbody>
-    </table>
+  <!-- Paginación -->
+  <div *ngIf="totalPages > 1" style="margin: 16px 0; display: flex; justify-content: center; align-items: center; gap: 8px;">
+    <ion-button fill="clear" size="small" (click)="prevPage()" [disabled]="page === 1">
+      Anterior
+    </ion-button>
+    <span>Página {{ page }} de {{ totalPages }}</span>
+    <ion-button fill="clear" size="small" (click)="nextPage()" [disabled]="page === totalPages">
+      Siguiente
+    </ion-button>
   </div>
 </ion-content>

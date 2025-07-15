@@ -1,4 +1,36 @@
-/* Estilos básicos para la página de movimientos */
-:host {
-  display: block;
+// Estilos para la página de movimientos
+.filter-item {
+  max-width: 400px;
+  margin-bottom: 12px;
+}
+
+.mov-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 15px;
+}
+.mov-th {
+  padding: 10px 8px;
+  background: #e5e7eb;
+}
+.mov-th-fecha, .mov-td-fecha,
+.mov-th-tipo, .mov-td-tipo,
+.mov-th-item, .mov-td-item,
+.mov-th-lote, .mov-td-lote,
+.mov-th-notas, .mov-td-notas {
+  text-align: left;
+}
+.mov-th-cantidad, .mov-td-cantidad {
+  text-align: right;
+}
+.mov-row {
+  border-bottom: 1px solid #e0e0e0; 
+}
+.mov-td {
+  padding: 8px 6px;
+}
+.no-mov {
+  color: #888;
+  margin-top: 16px;
 }

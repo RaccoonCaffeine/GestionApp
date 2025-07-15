@@ -7,6 +7,16 @@ const redirectLoggedInToHome = () => redirectLoggedInTo(['home']);
 
 export const routes: Routes = [
   {
+    path: 'kits',
+    loadComponent: () => import('./pages/kits/kit.page').then((m) => m.KitPage),
+    ...canActivate(redirectUnauthorizedToLogin)
+  },
+  {
+    path: 'precio-historial',
+    loadComponent: () => import('./pages/precio-historial/precio-historial.page').then((m) => m.PrecioHistorialPage),
+    ...canActivate(redirectUnauthorizedToLogin)
+  },
+  {
     path: 'movimientos',
     loadComponent: () => import('./pages/movimientos/movimientos.page').then((m) => m.MovimientosPage),
     ...canActivate(redirectUnauthorizedToLogin)
@@ -50,6 +60,11 @@ export const routes: Routes = [
     path: 'forgot-password',
     loadComponent: () => import('./pages/auth/forgot-password.page').then((m) => m.ForgotPasswordPage),
     ...canActivate(redirectLoggedInToHome)
+  },
+  {
+    path: 'lotes',
+    loadComponent: () => import('./pages/lotes/lotes.page').then((m) => m.LotesPage),
+    ...canActivate(redirectUnauthorizedToLogin)
   },
   {
     path: '',

@@ -4,9 +4,9 @@ import { Router } from '@angular/router';
 import { Location } from '@angular/common';
 import { InventoryService } from '../../services/inventory.service';
 import { AuthService } from '../../services/auth.service';
-import { InventoryItem } from '../../models/inventory.model';
+import { InventoryItem, Batch } from '../../models/inventory.model';
 import { ToastService } from '../../services/toast.service';
-import { IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel, IonInput, IonButton, IonIcon, IonSpinner, IonButtons, AlertController } from '@ionic/angular/standalone';
+import { IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel, IonInput, IonButton, IonIcon, IonSpinner, IonButtons, AlertController, IonCard, IonCardHeader, IonCardTitle, IonCardContent } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -17,20 +17,104 @@ import { FormsModule } from '@angular/forms';
   standalone: true,
   imports: [
     IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonIcon, IonSpinner, IonButtons,
-    CommonModule, ReactiveFormsModule, FormsModule
+    CommonModule, ReactiveFormsModule, FormsModule,
+    IonCard, IonCardHeader, IonCardTitle, IonCardContent
   ]
 })
 export class InventarioPage implements OnInit {
+  filterCategory: string = '';
+  filterTag: string = '';
+
+  verLotes(item: InventoryItem) {
+    this.router.navigate(['/lotes'], { state: { item } });
+  }
+  // ...existing code...
+  batchForm: FormGroup = this.fb.group({
+    lotNumber: ['', Validators.required],
+    quantity: [0, [Validators.required, Validators.min(1)]],
+    expirationDate: [''],
+    price: [0, [Validators.required, Validators.min(0)]],
+    supplierId: ['']
+  });
+  batchEditing: { item: InventoryItem, batch?: Batch } | null = null;
+
+  toggleBatches(item: InventoryItem) {
+    this.expandedItemId = this.expandedItemId === item.id ? null : (item.id ?? null);
+  }
+
+  openAddBatch(item: InventoryItem) {
+    this.batchEditing = { item };
+    this.batchForm.reset({
+      lotNumber: '',
+      quantity: 0,
+      expirationDate: '',
+      price: 0,
+      supplierId: ''
+    });
+  }
+
+  async saveBatch() {
+    if (!this.batchEditing) return;
+    // Permitir si ya existe fecha en el batch original o en el formulario
+    const hasExpiration = this.batchForm.value.expirationDate || (this.batchEditing.batch && this.batchEditing.batch.expirationDate);
+    if (!hasExpiration) {
+      this.toast.present('Debes ingresar una fecha de vencimiento para el lote.', 'danger');
+      return;
+    }
+    const batch: Batch = {
+      ...this.batchForm.value,
+      expirationDate: this.batchForm.value.expirationDate || (this.batchEditing.batch ? this.batchEditing.batch.expirationDate : ''),
+      id: Date.now().toString(),
+      createdAt: new Date().toISOString()
+    };
+    await this.inventory.addBatchToItem(this.batchEditing.item.id!, batch);
+    this.batchEditing = null;
+    await this.loadItems();
+  }
+
+  editBatch(item: InventoryItem, batch: Batch) {
+    this.batchEditing = { item, batch };
+    this.batchForm.patchValue(batch);
+  }
+
+  async saveBatchEdit() {
+    if (!this.batchEditing || !this.batchEditing.batch) return;
+    // Permitir si ya existe fecha en el batch original o en el formulario
+    const hasExpiration = this.batchForm.value.expirationDate || this.batchEditing.batch.expirationDate;
+    if (!hasExpiration) {
+      this.toast.present('Debes ingresar una fecha de vencimiento para el lote.', 'danger');
+      return;
+    }
+    const updateData = {
+      ...this.batchForm.value,
+      expirationDate: this.batchForm.value.expirationDate || this.batchEditing.batch.expirationDate
+    };
+    await this.inventory.updateBatch(this.batchEditing.item.id!, this.batchEditing.batch.id!, updateData);
+    this.batchEditing = null;
+    await this.loadItems();
+  }
+
+  async deleteBatch(item: InventoryItem, batch: Batch) {
+    await this.inventory.deleteBatch(item.id!, batch.id!);
+    await this.loadItems();
+  }
   items: InventoryItem[] = [];
   form: FormGroup;
   loading = false;
   editingId: string | null = null;
+  showAddForm: boolean = false;
   expandedItemId: string | null = null;
   movimientosPorItem: { [itemId: string]: any[] } = {};
 
   filterText: string = '';
   filterMovsForm: FormGroup = this.fb.group({ start: [''], end: [''] });
   userRole: string | null = null;
+
+  // Calcula el stock total sumando los lotes
+  getItemStock(item: InventoryItem): number {
+    if (!item.batches) return 0;
+    return item.batches.reduce((sum, batch) => sum + (batch.quantity || 0), 0);
+  }
 
   constructor(
     private inventory: InventoryService,
@@ -45,13 +129,15 @@ export class InventarioPage implements OnInit {
       description: ['', Validators.required],
       serialNumber: ['', Validators.required],
       location: ['', Validators.required],
-      stock: [0, [Validators.required, Validators.min(0)]],
+      category: [''],
+      tags: [''],
       minStock: [0, [Validators.required, Validators.min(0)]]
+      // No se incluye stock, se calcula por lotes
     });
   }
 
   goBack() {
-    this.location.back();
+    this.router.navigate(['/home']);
   }
 
   async ngOnInit() {
@@ -61,6 +147,54 @@ export class InventarioPage implements OnInit {
     });
     this.initDateFilters();
     await this.loadItems();
+    // No mostrar toast de notificaciones en inventario
+    // await this.checkNotifications();
+  }
+  // Notificaciones pendientes
+  notifications: string[] = [];
+
+  // Verifica notificaciones de stock bajo y lotes próximos a vencer
+  async checkNotifications() {
+    this.notifications = [];
+    const today = new Date();
+    const soon = new Date(today.getTime() + 30 * 24 * 60 * 60 * 1000); // 30 días adelante
+    let itemsConNotificacion = 0;
+    for (const item of this.items) {
+      let tieneNotificacion = false;
+      // Stock bajo: si el stock es menor o igual al 80% del mínimo
+      const stock = this.getItemStock(item);
+      const minStock = item.minStock || 0;
+      if (minStock > 0) {
+        const ratio = stock / minStock;
+        if (ratio <= 0.8) {
+          this.notifications.push(`Stock bajo: ${item.description} (stock: ${stock}, mínimo: ${minStock}, ${(ratio * 100).toFixed(1)}%)`);
+          tieneNotificacion = true;
+        }
+      }
+      // Lotes próximos a vencer (puede haber varios por ítem)
+      if (item.batches && item.batches.length) {
+        const lotesVencen = item.batches.filter(batch => {
+          if (batch.expirationDate) {
+            // Normaliza la fecha para evitar problemas de zona horaria
+            const exp = new Date(batch.expirationDate + 'T00:00:00');
+            return exp.getTime() >= today.getTime() && exp.getTime() <= soon.getTime();
+          }
+          return false;
+        });
+        for (const batch of lotesVencen) {
+          this.notifications.push(`Lote próximo a vencer: ${item.description} - Lote ${batch.lotNumber} (vence: ${new Date(batch.expirationDate + 'T00:00:00').toLocaleDateString()})`);
+          tieneNotificacion = true;
+        }
+      }
+      if (tieneNotificacion) itemsConNotificacion++;
+    }
+    if (itemsConNotificacion > 0) {
+      this.toast.present(
+        `Tienes ${itemsConNotificacion} ítem(s) con notificaciones pendientes`,
+        'warning',
+        { position: 'top', cssClass: 'custom-toast', duration: 6000 }
+      );
+    }
   }
 
   initDateFilters() {
@@ -73,10 +207,33 @@ export class InventarioPage implements OnInit {
     });
   }
 
+  page = 1;
+  pageSize = 15;
   get filteredItems() {
-    if (!this.filterText) return this.items;
-    return this.items.filter(i => i.description.toLowerCase().includes(this.filterText.toLowerCase()));
+    let filtered = this.items;
+    const term = this.filterText?.trim().toLowerCase() || '';
+    if (term) {
+      filtered = filtered.filter(i =>
+        i.description.toLowerCase().includes(term) ||
+        (i.category || '').toLowerCase().includes(term) ||
+        (i.tags || []).some(t => t.toLowerCase().includes(term))
+      );
+    }
+    return filtered.slice((this.page - 1) * this.pageSize, this.page * this.pageSize);
   }
+  get totalPages() {
+    let filtered = !this.filterText
+      ? this.items
+      : this.items.filter(i => i.description.toLowerCase().includes(this.filterText.toLowerCase()));
+    return Math.ceil(filtered.length / this.pageSize) || 1;
+  }
+  goToPage(page: number) {
+    if (page < 1 || page > this.totalPages) return;
+    this.page = page;
+  }
+  nextPage() { this.goToPage(this.page + 1); }
+  prevPage() { this.goToPage(this.page - 1); }
+  resetPage() { this.page = 1; }
 
   async loadItems() {
     const snap = await this.inventory.getItems();
@@ -88,15 +245,21 @@ export class InventarioPage implements OnInit {
     if (this.form.invalid) return;
     this.loading = true;
     try {
+      // Procesar tags como array
+      const raw = this.form.value;
+      const tagsArr = raw.tags ? raw.tags.split(',').map((t: string) => t.trim()).filter((t: string) => t) : [];
+      const itemData = { ...raw, tags: tagsArr };
       if (this.editingId) {
-        await this.inventory.updateItem(this.editingId, this.form.value);
+        await this.inventory.updateItem(this.editingId, itemData);
         this.toast.present('Actualizado', 'success');
       } else {
-        await this.inventory.addItem(this.form.value);
+        // Al crear un ítem, inicializa batches vacío
+        await this.inventory.addItem({ ...itemData, batches: [] });
         this.toast.present('Agregado', 'success');
       }
       this.form.reset();
       this.editingId = null;
+      this.showAddForm = false;
       await this.loadItems();
     } catch (e) {
       this.toast.present('Error al guardar', 'danger');
@@ -106,8 +269,10 @@ export class InventarioPage implements OnInit {
 
   edit(item: InventoryItem) {
     if (this.userRole === 'trabajador') return;
+    // No se edita batches desde el formulario principal
     this.form.patchValue(item);
     this.editingId = item.id || null;
+    this.showAddForm = true;
   }
 
   async delete(item: InventoryItem) {
@@ -139,6 +304,7 @@ export class InventarioPage implements OnInit {
     if (this.userRole === 'trabajador') return;
     this.form.reset();
     this.editingId = null;
+    this.showAddForm = false;
   }
 
   async toggleMovimientos(item: InventoryItem) {

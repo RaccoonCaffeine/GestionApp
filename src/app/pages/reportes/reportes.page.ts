@@ -5,6 +5,7 @@ import { CommonModule, NgFor, NgIf } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { FilterByIdsPipe } from './filter-by-ids.pipe';
 import { FilterMovsByItemsPipe } from './filter-movs-by-items.pipe';
+import { FilterMovsByFechaPipe } from './filter-movs-by-fecha.pipe';
 
 @Component({
   selector: 'app-reportes',
@@ -15,7 +16,7 @@ import { FilterMovsByItemsPipe } from './filter-movs-by-items.pipe';
     IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel, IonSpinner, IonButtons, IonButton, IonIcon,
     IonSelect, IonSelectOption,
     CommonModule, NgFor, NgIf, FormsModule,
-    FilterByIdsPipe, FilterMovsByItemsPipe
+    FilterByIdsPipe, FilterMovsByItemsPipe, FilterMovsByFechaPipe
   ]
 })
 export class ReportesPage implements OnInit {
@@ -23,6 +24,8 @@ export class ReportesPage implements OnInit {
   movimientos: any[] = [];
   loading = false;
   selectedItems: string[] = [];
+  fechaInicio: string = '';
+  fechaFin: string = '';
 
   constructor(private reportService: ReportService) {}
 
@@ -43,6 +46,12 @@ export class ReportesPage implements OnInit {
         itemName: this.inventario.find(i => i.id === itemId)?.description || itemId
       };
     });
+    // Por defecto: primer y último día del mes actual
+    const now = new Date();
+    const firstDay = new Date(now.getFullYear(), now.getMonth(), 1);
+    const lastDay = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+    this.fechaInicio = firstDay.toISOString().substring(0, 10);
+    this.fechaFin = lastDay.toISOString().substring(0, 10);
     this.loading = false;
   }
 }

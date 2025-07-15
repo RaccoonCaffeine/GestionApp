@@ -1,0 +1,39 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-back-button defaultHref="/home" icon="arrow-back-outline"></ion-back-button>
+    </ion-buttons>
+    <ion-title>Historial de Precios de Compra</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-item>
+    <ion-label position="floating">Selecciona un ítem</ion-label>
+    <ion-select [(ngModel)]="selectedItemId" (ionChange)="onItemChange()">
+      <ion-select-option *ngFor="let item of items" [value]="item.id">{{ item.description }}</ion-select-option>
+    </ion-select>
+  </ion-item>
+
+  <div *ngIf="historial.length">
+    <table class="ph-table">
+      <thead>
+        <tr>
+          <th class="ph-th ph-th-lote">Lote</th>
+          <th class="ph-th ph-th-fecha">Fecha</th>
+          <th class="ph-th ph-th-precio">Precio</th>
+          <th class="ph-th ph-th-proveedor">Proveedor</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let h of historial" class="ph-row">
+          <td class="ph-td ph-td-lote">{{ h.lote }}</td>
+          <td class="ph-td ph-td-fecha">{{ h.fecha | date:'dd/MM/yyyy' }}</td>
+          <td class="ph-td ph-td-precio">{{ h.precio | currency:'CLP' }}</td>
+          <td class="ph-td ph-td-proveedor">{{ h.proveedor || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div *ngIf="selectedItemId && !historial.length" class="ph-no-historial">No hay historial de precios para este ítem.</div>
+</ion-content>

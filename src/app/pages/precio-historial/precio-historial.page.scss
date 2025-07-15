@@ -1,0 +1,37 @@
+// Estilos para la tabla de historial de precios
+.ph-table {
+  width: 100%;
+  background: #fff;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+  border-collapse: collapse;
+  font-size: 15px;
+  margin-top: 24px;
+}
+.ph-th {
+  padding: 10px 8px;
+  background: #e5e7eb;
+}
+.ph-th-lote, .ph-td-lote {
+  text-align: left;
+}
+.ph-th-fecha, .ph-td-fecha {
+  text-align: center;
+}
+.ph-th-precio, .ph-td-precio {
+  text-align: right;
+}
+.ph-th-proveedor, .ph-td-proveedor {
+  text-align: left;
+}
+.ph-row {
+  border-bottom: 1px solid #e0e0e0;
+}
+.ph-td {
+  padding: 8px 6px;
+  font-size: 15px;
+}
+.ph-no-historial {
+  color: #888;
+  margin-top: 24px;
+}

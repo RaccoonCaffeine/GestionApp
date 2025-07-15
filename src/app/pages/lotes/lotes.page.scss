@@ -1,0 +1,79 @@
+// Estilos para la página de lotes
+.item-title {
+  margin-bottom: 16px;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.lotes-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 15px;
+}
+.lotes-th {
+  padding: 10px 8px;
+  background: #e5e7eb;
+}
+.lotes-th-lote, .lotes-td-lote {
+  text-align: left;
+}
+.lotes-th-cantidad, .lotes-td-cantidad, .lotes-th-precio, .lotes-td-precio {
+  text-align: right;
+}
+.lotes-th-vencimiento, .lotes-td-vencimiento {
+  text-align: center;
+}
+.lotes-th-proveedor, .lotes-td-proveedor {
+  text-align: left;
+}
+.lotes-row {
+  border-bottom: 1px solid #e0e0e0;
+}
+.lotes-td {
+  padding: 8px 6px;
+  font-weight: 600;
+}
+.no-lotes {
+  color: #888;
+  margin-top: 16px;
+}
+// Estilos para la página de lotes
+.item-title {
+  margin-bottom: 16px;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.lotes-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: #fff;
+  font-size: 15px;
+}
+.lotes-th {
+  padding: 10px 8px;
+  background: #e5e7eb;
+}
+.lotes-th-lote, .lotes-td-lote {
+  text-align: left;
+}
+.lotes-th-cantidad, .lotes-td-cantidad, .lotes-th-precio, .lotes-td-precio {
+  text-align: right;
+}
+.lotes-th-vencimiento, .lotes-td-vencimiento {
+  text-align: center;
+}
+.lotes-th-proveedor, .lotes-td-proveedor {
+  text-align: left;
+}
+.lotes-row {
+  border-bottom: 1px solid #e0e0e0;
+}
+.lotes-td {
+  padding: 8px 6px;
+}
+.no-lotes {
+  color: #888;
+  margin-top: 16px;
+}

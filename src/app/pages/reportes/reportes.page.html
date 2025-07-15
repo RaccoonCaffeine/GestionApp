@@ -21,14 +21,25 @@
   </ion-item>
   <ion-list>
     <ion-item *ngFor="let item of inventario | filterByIds:selectedItems">
-      <ion-label>{{ item.description }} (Stock: {{ item.stock }})</ion-label>
+      <ion-label>{{ item.description }}</ion-label>
     </ion-item>
   </ion-list>
   <h2>Movimientos</h2>
+  <!-- Filtro por fecha -->
+  <form (ngSubmit)="$event.preventDefault()" style="display:flex; gap:16px; align-items:center; margin-bottom:8px;">
+    <ion-item style="flex:1;">
+      <ion-label>Desde: </ion-label>
+      <input type="date" [(ngModel)]="fechaInicio" name="fechaInicio" style="width:100%; padding:8px; border-radius:4px; border:1px solid #ccc;" />
+    </ion-item>
+    <ion-item style="flex:1;">
+      <ion-label>Hasta: </ion-label>
+      <input type="date" [(ngModel)]="fechaFin" name="fechaFin" style="width:100%; padding:8px; border-radius:4px; border:1px solid #ccc;" />
+    </ion-item>
+  </form>
   <ion-list>
-    <ion-item *ngFor="let mov of movimientos | filterMovsByItems:selectedItems">
+    <ion-item *ngFor="let mov of movimientos | filterMovsByItems:selectedItems | filterMovsByFecha:fechaInicio:fechaFin">
       <ion-label>
-        <strong>{{ mov.itemName || mov.itemId }}</strong> &mdash; {{ mov.type }} - {{ mov.quantity }} - {{ mov.date | date:'short' }}
+        <strong>{{ mov.itemName || mov.itemId }}</strong> &mdash; {{ mov.type }} - {{ mov.quantity }} - {{ mov.date | date:'dd/MM/yyyy HH:mm' }}
       </ion-label>
     </ion-item>
   </ion-list>

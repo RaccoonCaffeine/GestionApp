@@ -11,13 +11,13 @@
 </ion-header>
 
 <ion-content class="ion-padding">
-  <h2>Bienvenido</h2>
-  <div *ngIf="auth.user$ | async as user">
+  <h2 class="home-title">Bienvenido</h2>
+  <div *ngIf="auth.user$ | async as user" class="home-user-info">
     <p>Usuario: {{ user.email }}<br>Rol: {{ user.role }}</p>
   </div>
-  <ion-list *ngIf="auth.user$ | async as user">
-    <ion-item *ngFor="let opt of filteredMenuOptions(user)" [routerLink]="opt.route">
-      <ion-icon [name]="opt.icon" slot="start"></ion-icon>
+  <ion-list *ngIf="auth.user$ | async as user" class="home-menu-list">
+    <ion-item *ngFor="let opt of filteredMenuOptions(user)" [routerLink]="opt.route" class="home-menu-item">
+      <ion-icon [name]="opt.icon" slot="start" class="home-menu-icon"></ion-icon>
       <ion-label>{{ opt.label }}</ion-label>
     </ion-item>
   </ion-list>

@@ -15,11 +15,16 @@
       <ion-icon name="alert-circle-outline" color="warning" slot="start"></ion-icon>
       <ion-label>
         <strong>{{ alerta.description }}</strong><br>
-        <span style="color:#b71c1c">Stock bajo: {{ alerta.stock }} (mínimo: {{ alerta.minStock }})</span>
+        <ng-container *ngIf="alerta.type === 'stock'; else vencimiento">
+          <span class="alerta-stock">Stock bajo: {{ alerta.stock }} (mínimo: {{ alerta.minStock }})</span>
+        </ng-container>
+        <ng-template #vencimiento>
+          <span class="alerta-vencimiento">Lote {{ alerta.lotNumber }} próximo a vencer (vence: {{ alerta.expirationDate }})<br>Quedan T-{{ alerta.diasRestantes }} días</span>
+        </ng-template>
       </ion-label>
     </ion-item>
   </ion-list>
   <ng-template #noAlertas>
-    <p style="color:#888; text-align:center;">No hay alertas de stock bajo.</p>
+    <p class="no-alertas">No hay alertas de stock bajo.</p>
   </ng-template>
 </ion-content>

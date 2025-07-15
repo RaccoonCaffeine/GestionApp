@@ -1,0 +1,37 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="goBack()">
+        <ion-icon name="arrow-back-outline"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Lotes del ítem</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <div *ngIf="item">
+    <h2 class="item-title">{{ item.description }} ({{ item.serialNumber }})</h2>
+    <table class="lotes-table">
+      <thead>
+        <tr>
+          <th class="lotes-th lotes-th-lote">Lote</th>
+          <th class="lotes-th lotes-th-cantidad">Cantidad</th>
+          <th class="lotes-th lotes-th-vencimiento">Vencimiento</th>
+          <th class="lotes-th lotes-th-precio">Precio</th>
+          <th class="lotes-th lotes-th-proveedor">Proveedor</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let batch of item.batches" class="lotes-row">
+          <td class="lotes-td lotes-td-lote">{{ batch.lotNumber }}</td>
+          <td class="lotes-td lotes-td-cantidad">{{ batch.quantity }}</td>
+          <td class="lotes-td lotes-td-vencimiento">{{ batch.expirationDate | date:'dd/MM/yyyy' }}</td>
+          <td class="lotes-td lotes-td-precio">{{ batch.price | currency:'CLP' }}</td>
+          <td class="lotes-td lotes-td-proveedor">{{ batch.supplierId || '-' }}</td>
+        </tr>
+      </tbody>
+    </table>
+    <div *ngIf="item.batches?.length === 0" class="no-lotes">No hay lotes registrados para este ítem.</div>
+  </div>
+</ion-content>

@@ -3,14 +3,22 @@ export interface InventoryItem {
   description: string;
   serialNumber: string;
   location: string;
-  stock: number;
   minStock: number;
   category?: string;
   tags?: string[];
-  lot?: string;
-  expirationDate?: string; // ISO string
-  priceHistory?: { date: string; price: number }[];
   kitId?: string;
+  supplierId?: string;
+  // Nuevo: los lotes de este ítem
+  batches: Batch[];
+}
+
+export interface Batch {
+  id?: string;
+  lotNumber: string;
+  quantity: number;
+  expirationDate?: string; // ISO string
+  price: number;
+  createdAt: string; // ISO string
   supplierId?: string;
 }
 
@@ -23,6 +31,7 @@ export interface InventoryMovement {
   project?: string;
   userId: string;
   notes?: string;
+  batchId?: string;
 }
 
 export interface Supplier {

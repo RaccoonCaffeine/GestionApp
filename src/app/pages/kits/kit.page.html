@@ -1,0 +1,70 @@
+<ion-header>
+  <ion-toolbar color="primary">
+    <ion-buttons slot="start">
+      <ion-button (click)="goBack()">
+        <ion-icon name="arrow-back"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+    <ion-title>Gestión de Kits y Conjuntos</ion-title>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <form (ngSubmit)="addKit()">
+    <ion-item>
+      <ion-label position="floating">Nombre del Kit</ion-label>
+      <ion-input [(ngModel)]="newKit.name" name="kitName"></ion-input>
+    </ion-item>
+    <ion-item>
+      <ion-label position="floating">Buscar ítem</ion-label>
+      <ion-input [(ngModel)]="searchTerm" name="searchTerm" placeholder="Buscar por nombre o código"></ion-input>
+    </ion-item>
+    <div class="kit-card-list">
+      <ion-card *ngFor="let item of filteredItems.slice((kitPage-1)*8, kitPage*8)" class="kit-card-item">
+        <ion-card-header class="kit-card-header">
+          <ion-card-title>{{ item.description }}</ion-card-title>
+          <ion-checkbox class="kit-pin-checkbox" [checked]="item.id ? pinnedItems.has(item.id) : false" (ionChange)="togglePinItem(item.id)"></ion-checkbox>
+        </ion-card-header>
+        <ion-card-content class="kit-card-content">
+          <div class="kit-card-row">
+            <div class="kit-card-stock">
+              <span class="kit-card-label">Stock:</span>
+              <span class="kit-card-value">{{ getItemStock(item.id || '') }}</span>
+            </div>
+            <div class="kit-card-qty">
+              <span class="kit-card-label">Cantidad:</span>
+              <ion-input type="number" min="0" [ngModel]="getSelectedItem(item.id || '')" (ngModelChange)="setSelectedItem(item.id || '', $event)" name="item-{{item.id || ''}}" placeholder="Cantidad" class="kit-card-qty-input"></ion-input>
+            </div>
+          </div>
+        </ion-card-content>
+      </ion-card>
+    </div>
+    <div class="kit-pagination" *ngIf="filteredItems.length > 8">
+      <ion-button fill="clear" [disabled]="kitPage === 1" (click)="kitPage = kitPage - 1">Anterior</ion-button>
+      <span>Página {{ kitPage }} de {{ kitTotalPages }}</span>
+      <ion-button fill="clear" [disabled]="kitPage === kitTotalPages" (click)="kitPage = kitPage + 1">Siguiente</ion-button>
+    </div>
+    <ion-button expand="block" type="submit" [disabled]="loading">Crear Kit</ion-button>
+  </form>
+
+  <h2 style="margin-top:32px;">Kits Registrados</h2>
+  <ion-list>
+    <ion-item *ngFor="let kit of kits" class="kit-registered-item">
+      <ion-label (click)="toggleKitDetails(kit.id)" style="cursor:pointer; display:flex; align-items:center;">
+        <strong>{{ kit.name }}</strong>
+        <ion-icon [name]="expandedKitId === kit.id ? 'chevron-up' : 'chevron-down'" style="margin-left:8px;"></ion-icon>
+      </ion-label>
+      <ion-button color="danger" fill="outline" (click)="confirmDeleteKit(kit.id)">Eliminar</ion-button>
+    </ion-item>
+    <ion-item *ngIf="expandedKit" class="kit-details-panel">
+      <ion-label>
+        <div style="padding:8px 0 0 0;">
+          <strong>Ítems del kit:</strong>
+          <ul style="margin:8px 0 0 0; padding-left:18px;">
+            <li *ngFor="let comp of expandedKit.items">{{ getItemName(comp.itemId) }} x {{ comp.quantity }}</li>
+          </ul>
+        </div>
+      </ion-label>
+    </ion-item>
+  </ion-list>
+</ion-content>

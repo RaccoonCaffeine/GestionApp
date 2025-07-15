@@ -37,9 +37,59 @@ export class AlertasPopoverTriggerComponent implements OnInit, OnDestroy {
   listenStockAlerts() {
     this.unsubscribe();
     this.subscription = this.inventory.getStockAlerts$().subscribe((items: any[]) => {
-      // Solo alertas activas
-      this.alertas = items.filter((item: any) => item.stock !== undefined && item.minStock !== undefined && item.stock <= item.minStock);
-      this.unread = this.alertas.length; // Si implementas leídas, cámbialo aquí
+      // Normaliza fechas a solo día (sin horas)
+      const hoy = new Date();
+      hoy.setHours(0,0,0,0);
+      const soon = new Date(hoy.getTime() + 30 * 24 * 60 * 60 * 1000);
+      let alertas: any[] = [];
+      for (const item of items) {
+        // Calcular stock por lotes
+        const batches = item.batches || [];
+        const stock = batches.reduce((sum: number, batch: any) => sum + (batch.quantity || 0), 0);
+        // Stock bajo (<= 80% del mínimo)
+        if (item.minStock && stock / item.minStock <= 0.8) {
+          alertas.push({
+            type: 'stock',
+            description: item.description,
+            stock,
+            minStock: item.minStock,
+            id: item.id
+          });
+        }
+        // Lotes próximos a vencer
+        for (const batch of batches) {
+          if (batch.expirationDate) {
+            let exp: Date;
+            if (/^\d{4}-\d{2}-\d{2}$/.test(batch.expirationDate)) {
+              const [year, month, day] = batch.expirationDate.split('-').map(Number);
+              exp = new Date(year, month - 1, day);
+            } else {
+              exp = new Date(batch.expirationDate);
+            }
+            exp.setHours(0,0,0,0);
+            if (exp.getTime() >= hoy.getTime() && exp.getTime() <= soon.getTime()) {
+              const diasRestantes = Math.ceil((exp.getTime() - hoy.getTime()) / (1000 * 60 * 60 * 24));
+              alertas.push({
+                type: 'vencimiento',
+                description: item.description,
+                lotNumber: batch.lotNumber,
+                expirationDate: exp.toLocaleDateString(),
+                diasRestantes,
+                id: item.id + '-' + batch.lotNumber
+              });
+            }
+          }
+        }
+      }
+      // Elimina duplicados por id
+      const uniqueAlertas = Object.values(
+        alertas.reduce((acc, curr) => {
+          acc[curr.id] = curr;
+          return acc;
+        }, {})
+      );
+      this.alertas = uniqueAlertas;
+      this.unread = uniqueAlertas.length;
     });
   }
 

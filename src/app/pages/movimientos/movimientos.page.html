@@ -27,6 +27,38 @@
         <ion-select-option value="devolucion">Devolución</ion-select-option>
       </ion-select>
     </ion-item>
+    <!-- Selector de lote -->
+    <ng-container *ngIf="form.value.itemId">
+      <ion-item *ngIf="form.value.type === 'entrada'">
+        <ion-label position="floating">Lote</ion-label>
+        <ion-select formControlName="batchId">
+        <ion-select-option *ngFor="let batch of selectedBatches" [value]="batch.id">
+          {{ batch.lotNumber }} (vence: {{ batch.expirationDate | date:'dd/MM/yyyy' }})
+        </ion-select-option>
+          <ion-select-option value="new">Nuevo lote</ion-select-option>
+        </ion-select>
+      </ion-item>
+      <ion-item *ngIf="form.value.type === 'entrada' && form.value.batchId === 'new'">
+        <ion-label position="floating">Fecha de vencimiento</ion-label>
+        <ion-input type="date" formControlName="expirationDate"></ion-input>
+      </ion-item>
+      <ion-item *ngIf="form.value.type === 'entrada' && form.value.batchId === 'new'">
+        <ion-label position="floating">Precio de compra</ion-label>
+        <ion-input type="number" formControlName="price"></ion-input>
+      </ion-item>
+      <ion-item *ngIf="form.value.type === 'entrada' && form.value.batchId === 'new'">
+        <ion-label position="floating">Proveedor</ion-label>
+        <ion-input formControlName="supplierId"></ion-input>
+      </ion-item>
+      <ion-item *ngIf="form.value.type === 'salida'">
+        <ion-label position="floating">Lote</ion-label>
+        <ion-select formControlName="batchId">
+        <ion-select-option *ngFor="let batch of selectedBatches" [value]="batch.id">
+          {{ batch.lotNumber }} (vence: {{ batch.expirationDate | date:'dd/MM/yyyy' }})
+        </ion-select-option>
+        </ion-select>
+      </ion-item>
+    </ng-container>
     <ion-item>
       <ion-label position="floating">Cantidad</ion-label>
       <ion-input type="number" formControlName="quantity"></ion-input>
@@ -52,15 +84,34 @@
     </ion-item>
   </form>
 
-  <ion-list>
-    <ion-item *ngFor="let mov of movimientos">
-      <ion-label>
-        <h2>{{ mov.type | titlecase }} - {{ mov.quantity }}</h2>
-        <p>
-          Ítem: {{ getItemName(mov.itemId) }}
-          | <span [style.color]="!mov.notes ? '#bbb' : ''">{{ mov.notes || 'Nota: sin nota' }}</span>
-        </p>
-      </ion-label>
+  <div style="margin-top:32px;">
+    <!-- Filtro por nombre o ítem SOLO para la tabla -->
+    <ion-item class="filter-item">
+      <ion-label position="floating">Filtrar por Nombre</ion-label>
+      <ion-input [(ngModel)]="filterText" name="filterText"></ion-input>
     </ion-item>
-  </ion-list>
+    <table class="mov-table">
+      <thead>
+        <tr>
+          <th class="mov-th mov-th-fecha">Fecha</th>
+          <th class="mov-th mov-th-tipo">Tipo</th>
+          <th class="mov-th mov-th-item">Ítem</th>
+          <th class="mov-th mov-th-lote">Lote</th>
+          <th class="mov-th mov-th-cantidad">Cantidad</th>
+          <th class="mov-th mov-th-notas">Notas</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let mov of filteredMovimientos" class="mov-row">
+          <td class="mov-td mov-td-fecha">{{ mov.date | date:'dd/MM/yyyy HH:mm' }}</td>
+          <td class="mov-td mov-td-tipo">{{ mov.type | titlecase }}</td>
+          <td class="mov-td mov-td-item">{{ getItemName(mov.itemId) }}</td>
+          <td class="mov-td mov-td-lote">{{ mov.batchId ? getBatchNumber(mov.batchId) : '-' }}</td>
+          <td class="mov-td mov-td-cantidad">{{ mov.quantity }}</td>
+          <td class="mov-td mov-td-notas">{{ mov.notes || '-' }}</td>
+        </tr>
+      </tbody> 
+    </table>
+    <div *ngIf="filteredMovimientos.length === 0" class="no-mov">No hay movimientos registrados en este rango.</div>
+  </div>
 </ion-content>

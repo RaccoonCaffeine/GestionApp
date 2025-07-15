@@ -5,8 +5,9 @@ import { Location } from '@angular/common';
 import { InventoryService } from '../../services/inventory.service';
 import { InventoryMovement, InventoryItem } from '../../models/inventory.model';
 import { ToastService } from '../../services/toast.service';
-import { IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel, IonInput, IonButton, IonSelect, IonSelectOption, IonSpinner, IonButtons, IonIcon } from '@ionic/angular/standalone';
+import { IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonSelect, IonSelectOption, IonSpinner, IonButtons, IonIcon } from '@ionic/angular/standalone';
 import { CommonModule } from '@angular/common';
+import { FormsModule } from '@angular/forms';
 
 @Component({
   selector: 'app-movimientos',
@@ -14,16 +15,36 @@ import { CommonModule } from '@angular/common';
   styleUrls: ['./movimientos.page.scss'],
   standalone: true,
   imports: [
-    IonHeader, IonToolbar, IonTitle, IonContent, IonList, IonItem, IonLabel, IonInput, IonButton, IonSelect, IonSelectOption, IonSpinner, IonButtons, IonIcon,
-    CommonModule, ReactiveFormsModule
+    IonHeader, IonToolbar, IonTitle, IonContent, IonItem, IonLabel, IonInput, IonButton, IonSelect, IonSelectOption, IonSpinner, IonButtons, IonIcon,
+    CommonModule, ReactiveFormsModule, FormsModule
   ]
 })
 export class MovimientosPage implements OnInit {
+  filterText: string = '';
+
+  get filteredMovimientos() {
+    if (!this.filterText) return this.movimientos;
+    const text = this.filterText.toLowerCase();
+    return this.movimientos.filter(mov => {
+      const item = this.items.find(i => i.id === mov.itemId);
+      return (item?.description?.toLowerCase().includes(text) || mov.itemId?.toLowerCase().includes(text));
+    });
+  }
+  get selectedBatches() {
+    const item = this.items.find(i => i.id === this.form?.value?.itemId);
+    return item?.batches || [];
+  }
+
+  getBatchNumber(batchId: string): string { 
+    const batch = this.selectedBatches.find(b => b.id === batchId);
+    return batch ? batch.lotNumber : batchId;
+  }
   movimientos: InventoryMovement[] = [];
   items: InventoryItem[] = [];
   form: FormGroup;
   filterForm: FormGroup;
   loading = false;
+  errorMsg: string = '';
 
   constructor(
     private inventory: InventoryService,
@@ -36,6 +57,10 @@ export class MovimientosPage implements OnInit {
       itemId: ['', Validators.required],
       type: ['entrada', Validators.required],
       quantity: [1, [Validators.required, Validators.min(1)]],
+      batchId: [''],
+      expirationDate: [''],
+      price: [0, [Validators.required, Validators.min(0)]],
+      supplierId: [''],
       notes: ['']
     });
     // Filtro de fechas: por defecto, primer y último día del mes actual
@@ -75,16 +100,24 @@ export class MovimientosPage implements OnInit {
 
   async save() {
     if (this.form.invalid) return;
+    // Para entradas, requiere lote y fecha de vencimiento SOLO si es un lote nuevo
+    if (this.form.value.type === 'entrada' && this.form.value.batchId === 'new') {
+      if (!this.form.value.expirationDate) {
+        this.toast.present('Debes ingresar la fecha de vencimiento del lote.', 'danger');
+        return;
+      }
+    }
     this.loading = true;
+    this.errorMsg = '';
     try {
-      // Registrar movimiento y actualizar stock
       await this.inventory.addMovementAndUpdateStock(this.form.value);
       this.toast.present('Movimiento registrado y stock actualizado', 'success');
       this.form.reset({ type: 'entrada', quantity: 1 });
       await this.loadMovimientos();
       await this.loadItems(); // Refresca el stock en la UI
-    } catch (e) {
-      this.toast.present('Error al registrar', 'danger');
+    } catch (e: any) {
+      this.errorMsg = e?.message || e;
+      this.toast.present('Error al registrar: ' + (e?.message || e), 'danger');
     }
     this.loading = false;
   }

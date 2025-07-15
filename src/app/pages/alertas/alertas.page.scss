@@ -1,4 +1,15 @@
+// Eliminado código inválido
 ion-item {
-  --background: #fffbe6;
-  --color: #b71c1c;
+  background-color: #fffbe6 !important;
+  color: #b71c1c !important;
+}
+.alerta-stock {
+  color: #b71c1c;
+}
+.alerta-vencimiento {
+  color: #e65100;
+}
+.no-alertas {
+  color: #888;
+  text-align: center;
 }

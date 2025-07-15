@@ -1,9 +1,60 @@
 import { Injectable } from '@angular/core';
 import { Firestore, collection, addDoc, getDocs, updateDoc, doc, deleteDoc, query, where, collectionData } from '@angular/fire/firestore';
 import { InventoryItem, InventoryMovement, Supplier, Kit } from '../models/inventory.model';
+import { Batch } from '../models/inventory.model';
 
 @Injectable({ providedIn: 'root' })
 export class InventoryService {
+  /**
+   * Agrega un lote (batch) a un ítem existente
+   */
+  async addBatchToItem(itemId: string, batch: Batch) {
+    const itemRef = doc(this.firestore, 'inventory', itemId);
+    const itemSnap = await getDocs(collection(this.firestore, 'inventory'));
+    let itemData: any = null;
+    itemSnap.forEach((docSnap) => {
+      if (docSnap.id === itemId) {
+        itemData = { id: docSnap.id, ...docSnap.data() };
+      }
+    });
+    if (!itemData) throw new Error('Ítem no encontrado');
+    const batches = itemData.batches ? [...itemData.batches, batch] : [batch];
+    await updateDoc(itemRef, { batches });
+  }
+
+  /**
+   * Actualiza un lote específico de un ítem
+   */
+  async updateBatch(itemId: string, batchId: string, batchUpdate: Partial<Batch>) {
+    const itemRef = doc(this.firestore, 'inventory', itemId);
+    const itemSnap = await getDocs(collection(this.firestore, 'inventory'));
+    let itemData: any = null;
+    itemSnap.forEach((docSnap) => {
+      if (docSnap.id === itemId) {
+        itemData = { id: docSnap.id, ...docSnap.data() };
+      }
+    });
+    if (!itemData || !itemData.batches) throw new Error('Ítem o lotes no encontrados');
+    const batches = itemData.batches.map((batch: any) => batch.id === batchId ? { ...batch, ...batchUpdate } : batch);
+    await updateDoc(itemRef, { batches });
+  }
+
+  /**
+   * Elimina un lote específico de un ítem
+   */
+  async deleteBatch(itemId: string, batchId: string) {
+    const itemRef = doc(this.firestore, 'inventory', itemId);
+    const itemSnap = await getDocs(collection(this.firestore, 'inventory'));
+    let itemData: any = null;
+    itemSnap.forEach((docSnap) => {
+      if (docSnap.id === itemId) {
+        itemData = { id: docSnap.id, ...docSnap.data() };
+      }
+    });
+    if (!itemData || !itemData.batches) throw new Error('Ítem o lotes no encontrados');
+    const batches = itemData.batches.filter((batch: any) => batch.id !== batchId);
+    await updateDoc(itemRef, { batches });
+  }
   constructor(private firestore: Firestore) {}
 
   /**
@@ -75,33 +126,54 @@ export class InventoryService {
     // 2. Obtener ítem actual
     const itemRef = doc(this.firestore, 'inventory', movement.itemId);
     const itemSnap = await getDocs(collection(this.firestore, 'inventory'));
-    let currentStock = 0;
-    let found = false;
+    let itemData = null as InventoryItem | null;
     itemSnap.forEach((docSnap) => {
       if (docSnap.id === movement.itemId) {
-        const itemData = docSnap.data() as InventoryItem;
-        currentStock = itemData.stock || 0;
-        found = true;
+        itemData = { id: docSnap.id, ...docSnap.data() } as InventoryItem;
       }
     });
-    if (!found) throw new Error('Ítem no encontrado');
-    // 3. Calcular nuevo stock
-    let newStock = currentStock;
+    if (!itemData) throw new Error('Ítem no encontrado');
+    let batches: Batch[] = Array.isArray(itemData.batches) ? [...itemData.batches] : [];
+
+    // ENTRADA o DEVOLUCIÓN
     if (movement.type === 'entrada' || movement.type === 'devolucion') {
-      newStock += movement.quantity;
-    } else if (movement.type === 'salida' || movement.type === 'uso' || movement.type === 'transferencia') {
-      newStock -= movement.quantity;
-      if (newStock < 0) newStock = 0;
+      if (movement.batchId === 'new' || batches.length === 0) {
+        // Crear lote nuevo
+        const newBatch: Batch = {
+          id: Math.random().toString(36).substring(2, 12),
+          lotNumber: 'Lote-' + new Date().getTime(),
+          quantity: movement.quantity,
+          expirationDate: (movement as any).expirationDate,
+          price: (movement as any).price ?? 0,
+          createdAt: new Date().toISOString(),
+          supplierId: (movement as any).supplierId ?? itemData.supplierId ?? ''
+        };
+        batches.push(newBatch);
+      } else {
+        // Sumar cantidad al lote seleccionado
+        const batch = batches.find(b => b.id === movement.batchId);
+        if (!batch) throw new Error('Lote seleccionado no existe');
+        batch.quantity += movement.quantity;
+      }
     }
-    // 4. Actualizar stock
-    await updateDoc(itemRef, { stock: newStock });
+    // SALIDA, USO, TRANSFERENCIA
+    else if (movement.type === 'salida' || movement.type === 'uso' || movement.type === 'transferencia') {
+      const batch = batches.find(b => b.id === movement.batchId);
+      if (!batch) throw new Error('Lote seleccionado no existe');
+      if (batch.quantity < movement.quantity) throw new Error('No hay suficiente stock en el lote seleccionado');
+      batch.quantity -= movement.quantity;
+    }
+    await updateDoc(itemRef, { batches });
   }
 
   async getStockAlerts() {
     const snap = await this.getItems();
     return snap.docs
-      .map(doc => ({ id: doc.id, ...doc.data() }))
-      .filter((item: any) => item.stock !== undefined && item.minStock !== undefined && item.stock <= item.minStock);
+      .map(doc => ({ id: doc.id, ...doc.data() } as InventoryItem))
+      .filter((item) => {
+        const totalStock = item.batches ? item.batches.reduce((sum, batch) => sum + (batch.quantity || 0), 0) : 0;
+        return item.minStock !== undefined && totalStock <= item.minStock;
+      });
   }
 
   /**

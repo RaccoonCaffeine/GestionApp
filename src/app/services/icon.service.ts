@@ -16,9 +16,11 @@ import {
   shieldCheckmarkOutline,
   notificationsOutline,
   alertCircleOutline,
-  chevronDownOutline
+  chevronDownOutline,
+  listOutline,
+  addCircleOutline,
+  pricetagOutline
 } from 'ionicons/icons';
-
 @Injectable({ providedIn: 'root' })
 export class IconService {
   constructor() {
@@ -38,7 +40,10 @@ export class IconService {
       'shield-checkmark-outline': shieldCheckmarkOutline,
       'notifications-outline': notificationsOutline,
       'alert-circle-outline': alertCircleOutline,
-      'chevron-down-outline': chevronDownOutline
+      'chevron-down-outline': chevronDownOutline,
+      'list-outline': listOutline,
+      'add-circle-outline': addCircleOutline,
+      'pricetag-outline': pricetagOutline
     });
   }
 }
